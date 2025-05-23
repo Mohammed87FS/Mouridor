@@ -1,6 +1,6 @@
-import Board from './Board'
-import HumanPlayer from './Human'
-import AI from './AI'
+import Board from './Board.js'
+import HumanPlayer from './Human.js'
+import AI from './AI.js'
 
 
 const GameState = {
@@ -26,7 +26,7 @@ class Game {
     }
 
     switchTurns() {
-        if (this.currentPlayer == this.human) {
+        if (this.currentPlayer === this.human) {
 
             this.currentPlayer = this.ai
         } else {
@@ -77,19 +77,29 @@ class Game {
         return false;
     }
     makeAIMove() {
-
-        // for now simple 
         const currentY = this.ai.position.y;
         const currentX = this.ai.position.x;
 
-        this.makeMove(currentX, currentY - 1);
+        // What if this move is invalid?
+        if (this.isValidMove(currentX, currentY - 1)) {
+            this.makeMove(currentX, currentY - 1);
+        } else {
+            // AI needs to try a different direction!
+            console.log("AI can't move down, trying sideways...");
+        }
     }
-
     isValidMove(toX, toY) {
 
         if (!this.board.isInsideBoard(toX, toY)) {
 
             return false
+        }
+
+        const otherPlayer = this.currentPlayer === this.human ? this.ai : this.human;
+
+        if (otherPlayer.position.x === toX && otherPlayer.position.y === toY) {
+            return false;
+
         }
 
         const fromX = this.currentPlayer.position.x;
@@ -108,3 +118,5 @@ class Game {
 
 
 }
+
+export default Game;

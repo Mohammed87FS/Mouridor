@@ -6,11 +6,11 @@ class AI extends Player {
         super(kind, startPosition)
     }
 
-    makeMove(board) {
+//     makeMove(board) {
         
-   console.log("AI is thinking...");
+//    console.log("AI is thinking...");
 
-    }
+//     }
 
 }
 export default AI;

@@ -6,10 +6,10 @@ class HumanPlayer extends Player {
         super(kind, startPosition)
     }
 
-    makeMove(board) {
+    // makeMove(board) {
 
 
-    }
+    // }
 
 }
 export default HumanPlayer;

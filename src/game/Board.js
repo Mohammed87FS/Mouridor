@@ -6,17 +6,17 @@ class Board {
         this.size = size;
     }
 
-    init() { };
+    // init() { };
 
     isInsideBoard(x, y) {
         return (x >= 0 && x <= this.size - 1) && (y >= 0 && y <= this.size - 1)
 
     }
 
-    getPawnPosition(pawn){
-   pawn.position
+//     getPawnPosition(pawn){
+//    pawn.position
     
-    }
+//     }
 
 
 }
