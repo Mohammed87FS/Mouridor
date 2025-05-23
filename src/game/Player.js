@@ -1,6 +1,6 @@
 class Player {
 
-    constructor(position) {
+    constructor(kind, position) {
         this.kind = kind;
         this.position = position;
         this.wallsLeft = 10;

@@ -63,17 +63,19 @@ class Game {
             this.makeAIMove();
         }
     }
-
     checkWin() {
-
         if (this.human.position.y === 8) {
-
             this.state = GameState.WON;
-            return true
+            return true;
         }
 
-    }
+        if (this.ai.position.y === 0) {
+            this.state = GameState.WON;
+            return true;
+        }
 
+        return false;
+    }
     makeAIMove() {
 
         // for now simple 
@@ -96,8 +98,8 @@ class Game {
         const dx = Math.abs(toX - fromX)
         const dy = Math.abs(toY - fromY)
 
-        if (!(dx === 1 && dy === 0) | (dy === 0 && dx === 1)) {
-            return false
+        if (!((dx === 1 && dy === 0) || (dx === 0 && dy === 1))) {
+            return false;
         }
 
         return true;
