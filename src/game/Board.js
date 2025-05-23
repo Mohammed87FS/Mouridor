@@ -6,15 +6,14 @@ class Board {
 
     init() { };
 
-    isInsideBoard(x,y){
-        if((x>=0 && x<=this.size-1)&&((y>=0 && y<=this.size-1)))
-        
-        return "you are within boundries"
+    isInsideBoard(x, y) {
+        return (x >= 0 && x <= this.size - 1) && (y >= 0 && y <= this.size - 1)
+
     }
 
 }
 
 const board = new Board(9)
 
-console.log(board.isInsideBoard(1,5));
-console.log(board.isInsideBoard(20,4))
+console.log(board.isInsideBoard(1, 5));
+console.log(board.isInsideBoard(20, 4))
