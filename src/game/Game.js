@@ -36,6 +36,11 @@ class Game {
     };
 
     makeMove(fromX, fromY, toX, toY) {
+
+        if (!this.isValidMove(toX, toY)) {
+            console.log("Invalid move!");
+            return;
+        }
         this.currentPlayer.position = { x: toX, y: toY }
         console.log(`${this.currentPlayer.kind} move to ${toX}, ${toY}`);
 
@@ -61,13 +66,35 @@ class Game {
 
     }
 
-     makeAIMove() {
-       
+    makeAIMove() {
+
         // for now simple 
         const currentY = this.ai.position.y;
         const currentX = this.ai.position.x;
-        
+
         this.makeMove(currentX, currentY - 1);
     }
+
+    isValidMove(toX, toY) {
+
+        if (!this.board.isInsideBoard(toX, toY)) {
+
+            return false
+        }
+
+        const fromX = this.currentPlayer.position.x;
+        const fromY = this.currentPlayer.position.y;
+
+        const dx = Math.abs(toX - fromX)
+        const dy = Math.abs(toY - fromY)
+
+        if (!(dx === 1 && dy === 0) | (dy === 0 && dx === 1)) {
+            return false
+        }
+
+        return true;
+    }
+
+
 
 }
