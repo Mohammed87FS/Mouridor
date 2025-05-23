@@ -34,6 +34,40 @@ class Game {
             this.currentPlayer = this.human
         }
     };
-    
-    
+
+    makeMove(fromX, fromY, toX, toY) {
+        this.currentPlayer.position = { x: toX, y: toY }
+        console.log(`${this.currentPlayer.kind} move to ${toX}, ${toY}`);
+
+        if (this.checkWin()) {
+            console.log(`${this.currentPlayer.kind} won !`)
+            return;
+        }
+
+        this.switchTurns();
+
+        if (this.currentPlayer = this.ai) {
+            this.makeAiMove();
+        }
+    }
+
+    checkWin() {
+
+        if (this.human.position.y === 8) {
+
+            this.state = GameState.WON;
+            return true
+        }
+
+    }
+
+     makeAIMove() {
+       
+        // for now simple 
+        const currentY = this.ai.position.y;
+        const currentX = this.ai.position.x;
+        
+        this.makeMove(currentX, currentY - 1);
+    }
+
 }
