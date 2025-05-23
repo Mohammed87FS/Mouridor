@@ -35,7 +35,7 @@ class Game {
         }
     };
 
-    makeMove(fromX, fromY, toX, toY) {
+    makeMove(toX, toY) {
 
         if (!this.isValidMove(toX, toY)) {
             console.log("Invalid move!");
@@ -44,6 +44,14 @@ class Game {
         this.currentPlayer.position = { x: toX, y: toY }
         console.log(`${this.currentPlayer.kind} move to ${toX}, ${toY}`);
 
+        const historyData = {
+            player: this.currentPlayer.kind,
+            position: { x: toX, y: toY }
+        };
+
+        this.moveHistory.push(historyData)
+
+
         if (this.checkWin()) {
             console.log(`${this.currentPlayer.kind} won !`)
             return;
@@ -51,8 +59,8 @@ class Game {
 
         this.switchTurns();
 
-        if (this.currentPlayer = this.ai) {
-            this.makeAiMove();
+        if (this.currentPlayer === this.ai) {
+            this.makeAIMove();
         }
     }
 
