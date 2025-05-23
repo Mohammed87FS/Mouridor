@@ -20,8 +20,5 @@ class Board {
 
 
 }
+export default Board
 
-// const board = new Board(9)
-
-// console.log(board.isInsideBoard(1, 5));
-// console.log(board.isInsideBoard(20, 4))

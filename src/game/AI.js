@@ -7,8 +7,10 @@ class AI extends Player {
     }
 
     makeMove(board) {
-
+        
+   console.log("AI is thinking...");
 
     }
 
 }
+export default AI;
