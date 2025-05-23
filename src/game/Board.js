@@ -1,3 +1,5 @@
+import Player from './Player.js';
+
 class Board {
 
     constructor(size) {
@@ -11,9 +13,15 @@ class Board {
 
     }
 
+    getPawnPosition(pawn){
+   pawn.position
+    
+    }
+
+
 }
 
-const board = new Board(9)
+// const board = new Board(9)
 
-console.log(board.isInsideBoard(1, 5));
-console.log(board.isInsideBoard(20, 4))
+// console.log(board.isInsideBoard(1, 5));
+// console.log(board.isInsideBoard(20, 4))

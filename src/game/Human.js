@@ -1,6 +1,6 @@
 import Player from './Player.js'
 
-class AI extends Player {
+class HumanPlayer extends Player {
     constructor(kind, startPosition) {
 
         super(kind, startPosition)
