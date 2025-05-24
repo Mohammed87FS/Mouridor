@@ -108,7 +108,7 @@ class GameApp {
         this.animate();
         
       
-        this.modernHUD.showNotification('Welcome to Enhanced Quoridor!', 'success');
+      
     }
 
     setupHUDEvents() {
@@ -129,8 +129,7 @@ class GameApp {
                     this.wallPlacementMode = 'auto';
                     break;
             }
-            
-            this.modernHUD.showNotification(`Switched to ${mode} mode`, 'info', 2000);
+       
         });
     }
 
@@ -178,26 +177,26 @@ class GameApp {
         switch(event.key.toLowerCase()) {
             case 'h':
                 this.wallPlacementMode = 'horizontal';
-                this.modernHUD.showNotification("Horizontal wall mode activated", 'info', 2000);
+               
                
                 document.querySelector('#horizontal-btn')?.click();
                 break;
             case 'v':
                 this.wallPlacementMode = 'vertical';
-                this.modernHUD.showNotification("Vertical wall mode activated", 'info', 2000);
+               
               
                 document.querySelector('#vertical-btn')?.click();
                 break;
             case 'w':
                 this.wallPlacementMode = 'auto';
-                this.modernHUD.showNotification("Auto wall mode activated", 'info', 2000);
+            
               
                 document.querySelector('#auto-btn')?.click();
                 break;
             case 'escape':
             case 'm':
                 this.wallPlacementMode = null;
-                this.modernHUD.showNotification("Movement mode activated", 'info', 2000);
+              
                 
                 document.querySelector('#move-btn')?.click();
                 break;
@@ -267,7 +266,7 @@ class GameApp {
                 CONFIG.colors.ai
             );
             
-            this.modernHUD.showNotification('AI made a move!', 'warning', 2000);
+         
         }
     }
 
@@ -294,7 +293,7 @@ class GameApp {
         if (!this.wallPlacementMode) return;
         
         if (this.game.getCurrentPlayer() !== this.game.human) {
-            this.modernHUD.showNotification("Not your turn!", 'warning');
+            
             return;
         }
 
@@ -316,16 +315,14 @@ class GameApp {
             
             document.querySelector('#move-btn')?.click();
             
-            this.modernHUD.showNotification(`${finalOrientation} wall placed!`, 'success');
+            
             
             if (!this.game.isGameOver() && this.game.getCurrentPlayer() === this.game.ai) {
                 setTimeout(() => {
                     this.handleAITurn();
                 }, 1000);
             }
-        } else {
-            this.modernHUD.showNotification('Invalid wall placement!', 'warning');
-        }
+        } 
     }
 
     animate() {
