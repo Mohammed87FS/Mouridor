@@ -11,14 +11,12 @@ const GameState = {
 
 class Game {
     constructor() {
-
         this.board = new Board(9)
-        this.human = new HumanPlayer("Human", { x: 4, y: 0 })
-        this.ai = new AI("AI", { x: 4, y: 8 })
-        this.currentPlayer = this.human; // ill change that later to be based on who wants to start first
+        this.human = new HumanPlayer("Human", { x: 4, y: 8 }) 
+        this.ai = new AI("AI", { x: 4, y: 0 })               
+        this.currentPlayer = this.human;
         this.state = GameState.PLAYING;
         this.moveHistory = []
-
     }
 
     start() {
@@ -65,26 +63,28 @@ class Game {
         return this.state === GameState.WON || this.state === GameState.DRAW;
     }
     checkWin() {
-        if (this.human.position.y === 8) {
+       
+        if (this.human.position.y === 0) {
             this.state = GameState.WON;
             return true;
         }
 
-        if (this.ai.position.y === 0) {
+  
+        if (this.ai.position.y === 8) {
             this.state = GameState.WON;
             return true;
         }
 
         return false;
     }
+
     makeAIMove() {
         const currentY = this.ai.position.y;
         const currentX = this.ai.position.x;
 
-
-        if (this.isValidMove(currentX, currentY - 1)) {
-            this.ai.position = { x: currentX, y: currentY - 1 };
-            console.log(`${this.ai.kind} move to ${currentX}, ${currentY - 1}`);
+        if (this.isValidMove(currentX, currentY + 1)) {
+            this.ai.position = { x: currentX, y: currentY + 1 };
+            console.log(`${this.ai.kind} move to ${currentX}, ${currentY + 1}`);
             this.switchTurns();
             return true;
         }
@@ -103,9 +103,9 @@ class Game {
             return true;
         }
 
-        else if (this.isValidMove(currentX, currentY + 1)) {
-            this.ai.position = { x: currentX, y: currentY + 1 };
-            console.log(`${this.ai.kind} move to ${currentX}, ${currentY + 1}`);
+        else if (this.isValidMove(currentX, currentY - 1)) {
+            this.ai.position = { x: currentX, y: currentY - 1 };
+            console.log(`${this.ai.kind} move to ${currentX}, ${currentY - 1}`);
             this.switchTurns();
             return true;
         }
@@ -113,6 +113,8 @@ class Game {
         console.log("AI can't move anywhere!");
         return false;
     }
+
+
     isValidMove(toX, toY) {
         console.log(`Checking move from (${this.currentPlayer.position.x}, ${this.currentPlayer.position.y}) to (${toX}, ${toY})`);
 

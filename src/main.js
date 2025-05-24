@@ -37,24 +37,25 @@ for (let x = 0; x < 9; x++) {
 const humanGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16);
 const humanMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
 const humanPawn = new THREE.Mesh(humanGeometry, humanMaterial);
-humanPawn.position.set(0, 0.35, -4);
+humanPawn.position.set(0, 0.35, 4); 
 scene.add(humanPawn);
 
 const aiGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16);
 const aiMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 const aiPawn = new THREE.Mesh(aiGeometry, aiMaterial);
-aiPawn.position.set(0, 0.35, 4);
+aiPawn.position.set(0, 0.35, -4); 
 scene.add(aiPawn);
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
 function updatePawnPositions() {
+
     humanPawn.position.x = game.human.position.x - 4;
-    humanPawn.position.z = game.human.position.y - 4;
+    humanPawn.position.z = (game.human.position.y - 4);  
 
     aiPawn.position.x = game.ai.position.x - 4;
-    aiPawn.position.z = game.ai.position.y - 4;
+    aiPawn.position.z = (game.ai.position.y - 4);  
 }
 
 function onMouseClick(event) {
