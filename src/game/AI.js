@@ -5,19 +5,18 @@ class AI extends Player {
         super(kind, startPosition);
         this.targetY = 8;
         console.log(`AI initialized at (${startPosition.x}, ${startPosition.y}), target: y=${this.targetY}`);
-        this.aggressiveness = 0.6; 
-        this.lastWallTurn = -5;
-        this.turnCount = 0;
         this.difficulty = 'hard';
         this.pathCache = new Map();
+        this.turnCount = 0;
     }
 
     makeMove(game) {
-        console.log("=== AI MAKING DECISION ===");
+        console.log("\n=== AI MAKING DECISION ===");
         console.log(`AI position: (${this.position.x}, ${this.position.y})`);
         console.log(`Human position: (${game.human.position.x}, ${game.human.position.y})`);
+        console.log(`AI walls left: ${this.wallsLeft}, Human walls left: ${game.human.wallsLeft}`);
         
-        this.turnCount = Math.floor((game.moveHistory?.length || 0) / 2) + 1;
+        this.turnCount++;
         
         
         if (this.turnCount % 5 === 0) {
@@ -25,43 +24,69 @@ class AI extends Player {
         }
         
         const bestMove = this.findBestMove(game);
-        console.log(`AI decided on: ${bestMove.type} with score ${bestMove.score}`);
+        console.log(`\nFINAL DECISION: ${bestMove.type} with score ${bestMove.score}`);
         
         if (bestMove.type === 'wall') {
-            this.lastWallTurn = this.turnCount;
-            console.log(`AI placing ${bestMove.orientation} wall at (${bestMove.x}, ${bestMove.y})`);
+            console.log(`Placing ${bestMove.orientation} wall at (${bestMove.x}, ${bestMove.y})`);
             return game.placeWall(bestMove.x, bestMove.y, bestMove.orientation);
         } else {
-            console.log(`AI moving to (${bestMove.x}, ${bestMove.y})`);
+            console.log(`Moving to (${bestMove.x}, ${bestMove.y})`);
             return game.makeMove(bestMove.x, bestMove.y);
         }
     }
 
     findBestMove(game) {
-        console.log("=== FINDING BEST MOVE ===");
+        
+        const myPath = this.findShortestPath(game, this.position, this.targetY);
+        const humanPath = this.findShortestPath(game, game.human.position, 0);
+        
+        const myDistance = myPath ? myPath.length - 1 : 999;
+        const humanDistance = humanPath ? humanPath.length - 1 : 999;
+        
+        console.log(`\nCurrent distances - AI: ${myDistance}, Human: ${humanDistance}`);
+        
         const moves = [];
         
         
-        const myPath = this.findShortestPath(game, this.position, { x: this.position.x, y: this.targetY });
-        const humanPath = this.findShortestPath(game, game.human.position, { x: game.human.position.x, y: 0 });
+        const humanCanWinNextTurn = humanDistance === 1;
+        const isEmergency = humanDistance <= 2;
+        const isCritical = humanDistance <= 4;
         
-        console.log(`My path length: ${myPath ? myPath.length : 'blocked'}`);
-        console.log(`Human path length: ${humanPath ? humanPath.length : 'blocked'}`);
+        if (humanCanWinNextTurn) {
+            console.log("\n🚨 EMERGENCY: Human can win on next turn!");
+        } else if (isEmergency) {
+            console.log("\n⚠️ WARNING: Human very close to winning!");
+        } else if (isCritical) {
+            console.log("\n📍 ALERT: Human approaching goal!");
+        }
+        
+        
+        if (humanCanWinNextTurn && this.hasWallsLeft()) {
+            console.log("Searching for emergency blocking walls...");
+            const blockingWalls = this.findUrgentBlockingWalls(game, humanPath);
+            
+            if (blockingWalls.length > 0) {
+                
+                return blockingWalls[0];
+            } else {
+                console.log("WARNING: No blocking walls found!");
+            }
+        }
         
         
         const possibleMoves = this.getPossibleMoves(game);
-        console.log(`Possible moves: ${possibleMoves.length}`);
-        
         for (const move of possibleMoves) {
             const score = this.evaluateMove(game, move, myPath, humanPath);
             moves.push({ ...move, score, type: 'move' });
         }
         
         
-        if (this.hasWallsLeft() && humanPath && humanPath.length <= 6) {
-            console.log("Considering wall placements...");
-            const wallMoves = this.findBestWallPlacements(game, humanPath);
-            moves.push(...wallMoves);
+        if (this.hasWallsLeft() && !humanCanWinNextTurn) {
+            if (isEmergency || (isCritical && humanDistance <= myDistance)) {
+                console.log("Evaluating blocking walls...");
+                const blockingWalls = this.findBlockingWalls(game, humanPath);
+                moves.push(...blockingWalls);
+            }
         }
         
         
@@ -69,131 +94,115 @@ class AI extends Player {
         
         if (moves.length === 0) {
             console.error("No valid moves found!");
-            
-            const dirs = [[0,1], [0,-1], [1,0], [-1,0]];
-            for (const [dx, dy] of dirs) {
-                const x = this.position.x + dx;
-                const y = this.position.y + dy;
-                if (game.isValidMove(x, y)) {
-                    return { x, y, score: 0, type: 'move' };
-                }
-            }
+            return this.getEmergencyMove(game);
         }
+        
+        
+        console.log("\nTop moves:");
+        moves.slice(0, 3).forEach(m => {
+            console.log(`  ${m.type} ${m.type === 'wall' ? m.orientation + ' at' : 'to'} (${m.x}, ${m.y}): score ${m.score}`);
+        });
         
         return moves[0];
     }
 
-    getPossibleMoves(game) {
-        const moves = [];
-        const { x, y } = this.position;
-        
-        
-        const directions = [
-            { dx: 0, dy: 1, name: 'down' },
-            { dx: 0, dy: -1, name: 'up' },
-            { dx: 1, dy: 0, name: 'right' },
-            { dx: -1, dy: 0, name: 'left' }
-        ];
-        
-        for (const dir of directions) {
-            const newX = x + dir.dx;
-            const newY = y + dir.dy;
-            
-            if (game.isValidMove(newX, newY)) {
-                moves.push({ x: newX, y: newY });
-            }
-        }
-        
-        return moves;
-    }
-
-    evaluateMove(game, move, currentAIPath, currentHumanPath) {
-        let score = 0;
-        
-        
-        const tempGame = this.simulateMove(game, move);
-        const newPath = this.findShortestPath(tempGame, move, { x: move.x, y: this.targetY });
-        
-        if (!newPath) {
-            console.log(`Move to (${move.x}, ${move.y}) would leave no path to goal`);
-            return -10000;
-        }
-        
-        
-        const currentDistance = currentAIPath ? currentAIPath.length : 999;
-        const newDistance = newPath.length;
-        const improvement = currentDistance - newDistance;
-        
-        score += improvement * 1000; 
-        
-        
-        if (move.y > this.position.y) {
-            score += 200; 
-        } else if (move.y < this.position.y) {
-            score -= 100; 
-        }
-        
-        
-        const centerDistance = Math.abs(move.x - 4);
-        score += (4 - centerDistance) * 10;
-        
-        
-        if (newDistance <= 2) {
-            score += 5000;
-        }
-        
-        console.log(`Move to (${move.x}, ${move.y}): distance ${newDistance}, improvement ${improvement}, score ${score}`);
-        
-        return score;
-    }
-
-    findBestWallPlacements(game, humanPath) {
+    findUrgentBlockingWalls(game, humanPath) {
         const walls = [];
         
         if (!humanPath || humanPath.length < 2) return walls;
         
         
-        for (let i = 1; i < Math.min(4, humanPath.length); i++) {
-            const from = humanPath[i - 1];
-            const to = humanPath[i];
-            
-            
-            const blockingWalls = this.getWallsToBlockMove(from, to);
-            
-            for (const wall of blockingWalls) {
-                if (game.board.isValidWallPlacement(wall.x, wall.y, wall.orientation)) {
-                    const score = this.evaluateWallPlacement(game, wall);
-                    if (score > 100) { 
-                        walls.push({ ...wall, score, type: 'wall' });
+        const humanPos = game.human.position;
+        const winningMove = humanPath[1]; 
+        
+        console.log(`Human winning move: from (${humanPos.x}, ${humanPos.y}) to (${winningMove.x}, ${winningMove.y})`);
+        
+        
+        const blockingPositions = this.getAllBlockingWallsForMove(humanPos, winningMove);
+        
+        for (const wall of blockingPositions) {
+            if (game.board.isValidWallPlacement(wall.x, wall.y, wall.orientation)) {
+                
+                const tempGame = this.simulateWallPlacement(game, wall);
+                if (tempGame) {
+                    const newHumanPath = this.findShortestPath(tempGame, humanPos, 0);
+                    const aiPath = this.findShortestPath(tempGame, this.position, this.targetY);
+                    
+                    
+                    if (newHumanPath && aiPath) {
+                        const delay = newHumanPath.length - humanPath.length;
+                        if (delay > 0) {
+                            
+                            const score = 10000 + delay * 1000; 
+                            walls.push({ ...wall, score, type: 'wall' });
+                            console.log(`✓ Wall at (${wall.x}, ${wall.y}) ${wall.orientation} delays human by ${delay} moves!`);
+                        }
                     }
                 }
             }
         }
         
+        walls.sort((a, b) => b.score - a.score);
         return walls;
     }
 
-    getWallsToBlockMove(from, to) {
+    getAllBlockingWallsForMove(from, to) {
         const walls = [];
         const dx = to.x - from.x;
         const dy = to.y - from.y;
         
-        if (dy === 1) { 
+        if (dy === -1) { 
             
-            walls.push({ x: Math.max(0, to.x - 1), y: to.y, orientation: 'horizontal' });
-            walls.push({ x: to.x, y: to.y, orientation: 'horizontal' });
-        } else if (dy === -1) { 
-            
-            walls.push({ x: Math.max(0, from.x - 1), y: from.y, orientation: 'horizontal' });
             walls.push({ x: from.x, y: from.y, orientation: 'horizontal' });
+            if (from.x > 0) {
+                walls.push({ x: from.x - 1, y: from.y, orientation: 'horizontal' });
+            }
+        } else if (dy === 1) { 
+            
+            walls.push({ x: to.x, y: to.y, orientation: 'horizontal' });
+            if (to.x > 0) {
+                walls.push({ x: to.x - 1, y: to.y, orientation: 'horizontal' });
+            }
         } else if (dx === 1) { 
             
-            walls.push({ x: to.x, y: Math.max(0, to.y - 1), orientation: 'vertical' });
             walls.push({ x: to.x, y: to.y, orientation: 'vertical' });
+            if (to.y > 0) {
+                walls.push({ x: to.x, y: to.y - 1, orientation: 'vertical' });
+            }
         } else if (dx === -1) { 
             
-            walls.push({ x: from.x, y: Math.max(0, from.y - 1), orientation: 'vertical' });
             walls.push({ x: from.x, y: from.y, orientation: 'vertical' });
+            if (from.y > 0) {
+                walls.push({ x: from.x, y: from.y - 1, orientation: 'vertical' });
+            }
+        }
+        
+        
+        return walls.filter(w => w.x >= 0 && w.x <= 7 && w.y >= 0 && w.y <= 7);
+    }
+
+    findBlockingWalls(game, humanPath) {
+        const walls = [];
+        
+        if (!humanPath || humanPath.length < 2) return walls;
+        
+        
+        const stepsToCheck = Math.min(4, humanPath.length - 1);
+        
+        for (let i = 0; i < stepsToCheck; i++) {
+            const from = humanPath[i];
+            const to = humanPath[i + 1];
+            
+            const blockingPositions = this.getAllBlockingWallsForMove(from, to);
+            
+            for (const wall of blockingPositions) {
+                if (game.board.isValidWallPlacement(wall.x, wall.y, wall.orientation)) {
+                    const score = this.evaluateWallPlacement(game, wall);
+                    if (score > 100) {
+                        walls.push({ ...wall, score, type: 'wall' });
+                    }
+                }
+            }
         }
         
         return walls;
@@ -208,36 +217,40 @@ class AI extends Player {
         const aiPos = this.position;
         
         
-        const humanPathBefore = this.findShortestPath(game, humanPos, { x: humanPos.x, y: 0 });
-        const aiPathBefore = this.findShortestPath(game, aiPos, { x: aiPos.x, y: 8 });
+        const humanPathBefore = this.findShortestPath(game, humanPos, 0);
+        const aiPathBefore = this.findShortestPath(game, aiPos, this.targetY);
         
-        const humanPathAfter = this.findShortestPath(tempGame, humanPos, { x: humanPos.x, y: 0 });
-        const aiPathAfter = this.findShortestPath(tempGame, aiPos, { x: aiPos.x, y: 8 });
+        
+        const humanPathAfter = this.findShortestPath(tempGame, humanPos, 0);
+        const aiPathAfter = this.findShortestPath(tempGame, aiPos, this.targetY);
         
         
         if (!humanPathAfter || !aiPathAfter) {
             return -10000;
         }
         
-        const humanDelay = humanPathAfter.length - (humanPathBefore ? humanPathBefore.length : 100);
-        const aiDelay = aiPathAfter.length - (aiPathBefore ? aiPathBefore.length : 100);
+        const humanBefore = humanPathBefore ? humanPathBefore.length - 1 : 100;
+        const aiBefore = aiPathBefore ? aiPathBefore.length - 1 : 100;
+        const humanAfter = humanPathAfter.length - 1;
+        const aiAfter = aiPathAfter.length - 1;
+        
+        const humanDelay = humanAfter - humanBefore;
+        const aiDelay = aiAfter - aiBefore;
         
         
-        let score = (humanDelay - aiDelay) * 100;
-        
-        
-        if (humanDelay >= 3) {
-            score += 300;
+        if (humanDelay <= 0) {
+            return -100;
         }
         
-        
-        if (humanPathBefore && humanPathBefore.length <= 3) {
-            score += 500;
-        }
+        let score = humanDelay * 300 - aiDelay * 150;
         
         
-        if (aiDelay > 1) {
-            score -= aiDelay * 50;
+        if (humanBefore <= 2) {
+            score += 3000 + humanDelay * 1000;
+        } else if (humanBefore <= 4) {
+            score += 1500 + humanDelay * 500;
+        } else if (humanBefore <= 6) {
+            score += 500 + humanDelay * 200;
         }
         
         console.log(`Wall at (${wall.x}, ${wall.y}) ${wall.orientation}: human +${humanDelay}, ai +${aiDelay}, score ${score}`);
@@ -245,9 +258,68 @@ class AI extends Player {
         return score;
     }
 
-    findShortestPath(game, start, goal) {
-        const cacheKey = `${start.x},${start.y}-${goal.x},${goal.y}`;
+    getPossibleMoves(game) {
+        const moves = [];
+        const { x, y } = this.position;
         
+        const directions = [
+            { dx: 0, dy: 1 },   
+            { dx: 0, dy: -1 },  
+            { dx: 1, dy: 0 },   
+            { dx: -1, dy: 0 }   
+        ];
+        
+        for (const { dx, dy } of directions) {
+            const newX = x + dx;
+            const newY = y + dy;
+            
+            if (game.isValidMove(newX, newY)) {
+                moves.push({ x: newX, y: newY });
+            }
+        }
+        
+        return moves;
+    }
+
+    evaluateMove(game, move, currentAIPath, currentHumanPath) {
+        
+        const tempGame = this.simulateMove(game, move);
+        const newPath = this.findShortestPath(tempGame, move, this.targetY);
+        
+        if (!newPath) {
+            return -10000;
+        }
+        
+        const currentDistance = currentAIPath ? currentAIPath.length - 1 : 999;
+        const newDistance = newPath.length - 1;
+        const improvement = currentDistance - newDistance;
+        
+        let score = improvement * 1000;
+        
+        
+        if (move.y > this.position.y) {
+            score += 300;
+        } else if (move.y < this.position.y) {
+            score -= 200;
+        }
+        
+        
+        if (newDistance === 0) {
+            score += 50000;
+        } else if (newDistance === 1) {
+            score += 10000;
+        } else if (newDistance === 2) {
+            score += 5000;
+        }
+        
+        
+        const centerDistance = Math.abs(move.x - 4);
+        score += (4 - centerDistance) * 10;
+        
+        return score;
+    }
+
+    findShortestPath(game, start, goalY) {
         
         const queue = [{ pos: start, path: [start] }];
         const visited = new Set([`${start.x},${start.y}`]);
@@ -256,7 +328,7 @@ class AI extends Player {
             const { pos, path } = queue.shift();
             
             
-            if (pos.y === goal.y) {
+            if (pos.y === goalY) {
                 return path;
             }
             
@@ -273,11 +345,12 @@ class AI extends Player {
                 const newY = pos.y + dy;
                 const key = `${newX},${newY}`;
                 
-                
                 if (visited.has(key)) continue;
                 
                 
                 if (!game.board.isInsideBoard(newX, newY)) continue;
+                
+                
                 if (game.board.isMovementBlocked(pos.x, pos.y, newX, newY)) continue;
                 
                 visited.add(key);
@@ -288,16 +361,14 @@ class AI extends Player {
             }
         }
         
-        return null; 
+        return null;
     }
 
     simulateMove(game, move) {
-        
         return {
             board: game.board,
             human: game.human,
-            ai: { ...this, position: move },
-            isValidMove: game.isValidMove.bind(game)
+            ai: { ...this, position: move }
         };
     }
 
@@ -316,37 +387,68 @@ class AI extends Player {
             
             const tempBoard = {
                 walls: tempWalls,
-                isInsideBoard: game.board.isInsideBoard.bind(game.board),
+                isInsideBoard: (x, y) => x >= 0 && x <= 8 && y >= 0 && y <= 8,
+                
                 hasWall: function(x, y, orientation) {
-                    const key = `${x},${y}`;
-                    return tempWalls[orientation].has(key);
+                    return tempWalls[orientation].has(`${x},${y}`);
                 },
+                
                 isMovementBlocked: function(fromX, fromY, toX, toY) {
+                    
                     if (fromY === toY && Math.abs(fromX - toX) === 1) {
                         const wallX = Math.min(fromX, toX);
-                        return this.hasWall(wallX, fromY, 'vertical');
-                    } else if (fromX === toX && Math.abs(fromY - toY) === 1) {
-                        const wallY = Math.min(fromY, toY);
-                        return this.hasWall(fromX, wallY, 'horizontal');
+                        const wallY = fromY;
+                        
+                        
+                        if (wallY > 0 && this.hasWall(wallX, wallY - 1, 'vertical')) return true;
+                        if (this.hasWall(wallX, wallY, 'vertical')) return true;
+                        
+                        return false;
                     }
+                    
+                    
+                    if (fromX === toX && Math.abs(fromY - toY) === 1) {
+                        const wallX = fromX;
+                        const wallY = Math.min(fromY, toY);
+                        
+                        
+                        if (wallX > 0 && this.hasWall(wallX - 1, wallY, 'horizontal')) return true;
+                        if (this.hasWall(wallX, wallY, 'horizontal')) return true;
+                        
+                        return false;
+                    }
+                    
                     return false;
                 }
             };
-            
             
             return {
                 board: tempBoard,
                 human: game.human,
                 ai: this
             };
+            
         } catch (e) {
             console.error("Wall simulation error:", e);
             return null;
         }
     }
 
+    getEmergencyMove(game) {
+        
+        const dirs = [[0,1], [1,0], [-1,0], [0,-1]];
+        for (const [dx, dy] of dirs) {
+            const x = this.position.x + dx;
+            const y = this.position.y + dy;
+            if (game.isValidMove(x, y)) {
+                return { x, y, score: 0, type: 'move' };
+            }
+        }
+        return { x: this.position.x, y: this.position.y, score: 0, type: 'move' };
+    }
+
     canReachGoal(game, position) {
-        const path = this.findShortestPath(game, position, { x: position.x, y: this.targetY });
+        const path = this.findShortestPath(game, position, this.targetY);
         return path !== null;
     }
 }
