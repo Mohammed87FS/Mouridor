@@ -18,7 +18,7 @@ const CONFIG = {
         radius: 0.3,
         yPosition: 0.35
     },
-     wall: {
+    wall: {
         color: 0xBFBF00, 
         thickness: 0.2, 
         height: 0.8,    
@@ -80,29 +80,32 @@ class GameApp {
 
     init() {
         this.game.start();
+        this.game.setWallCreationCallback((x, y, orientation) => {
+            this.createVisualWall(x, y, orientation);
+        });
         this.createBoard();
         this.createPawns();
         this.setupEventHandlers();
         this.gameController.updatePawnPositions();
         this.animate();
     }
+
+    createVisualWall(x, y, orientation) {
+        let wall;
+        if (orientation === 'horizontal') {
+            wall = this.wallFactory.createHorizontalWall(x, y);
+        } else {
+            wall = this.wallFactory.createVerticalWall(x, y);
+        }
+        this.sceneManager.addToScene(wall);
+        console.log(`Created visual ${orientation} wall at (${x}, ${y})`);
+    }
+
     placeWall(x, y, orientation) {
         const success = this.game.placeWall(x, y, orientation);
-
-        if (success) {
-          
-            let wall;
-            if (orientation === 'horizontal') {
-                wall = this.wallFactory.createHorizontalWall(x, y);
-            } else {
-                wall = this.wallFactory.createVerticalWall(x, y);
-            }
-
-            this.sceneManager.addToScene(wall);
-        }
-
         return success;
     }
+
     createBoard() {
         const squares = this.boardFactory.createBoard();
         this.sceneManager.setSquares(squares);
@@ -124,14 +127,12 @@ class GameApp {
         this.sceneManager.addToScene(aiPawn);
     }
 
-     setupEventHandlers() {
+    setupEventHandlers() {
         this.inputHandler.setClickCallback((clickedSquare, event) => {
             if (this.wallPlacementMode) {
-                // Handle wall placement with edge detection
                 this.handleWallPlacementWithEdges(event);
             } else {
-                // Handle pawn movement
-                this.gameController.handleSquareClick(clickedSquare);
+                this.handleSquareClick(clickedSquare);
             }
         });
 
@@ -140,12 +141,12 @@ class GameApp {
             this.rendererManager.resize(width, height);
         });
 
-    
         this.inputHandler.setKeyCallback((event) => {
             this.handleKeyPress(event);
         });
     }
-     handleWallPlacementWithEdges(event) {
+
+    handleWallPlacementWithEdges(event) {
         if (!this.wallPlacementMode) return;
         
         if (this.game.getCurrentPlayer() !== this.game.human) {
@@ -162,7 +163,6 @@ class GameApp {
         
         console.log(`Attempting to place ${orientation} wall at edge (${gridX}, ${gridY})`);
         
-        // Force the orientation based on wall placement mode if desired
         const finalOrientation = this.wallPlacementMode === 'auto' ? orientation : this.wallPlacementMode;
         
         const success = this.placeWall(gridX, gridY, finalOrientation);
@@ -171,69 +171,56 @@ class GameApp {
             this.wallPlacementMode = null;
             console.log("Wall placed! Mode reset to movement.");
             
-            // Handle AI turn
+          
             if (!this.game.isGameOver() && this.game.getCurrentPlayer() === this.game.ai) {
                 setTimeout(() => {
-                    this.game.makeAIMove();
-                    this.gameController.updatePawnPositions();
-                }, 500);
+                    this.handleAITurn();
+                }, 1000);
             }
         }
+    }
+
+    handleSquareClick(clickedSquare) {
+        const moveSuccess = this.gameController.handleSquareClick(clickedSquare);
+        
+        if (moveSuccess && !this.game.isGameOver() && this.game.getCurrentPlayer() === this.game.ai) {
+            setTimeout(() => {
+                this.handleAITurn();
+            }, 1000);
+        }
+    }
+
+
+    handleAITurn() {
+        const aiMoveSuccess = this.game.makeAIMove();
+        if (aiMoveSuccess) {
+            this.gameController.updatePawnPositions();
+        }
+        
     }
 
     handleKeyPress(event) {
         switch(event.key.toLowerCase()) {
             case 'h':
                 this.wallPlacementMode = 'horizontal';
-                console.log("Horizontal wall placement mode activated. Click between squares to place.");
+                console.log("Horizontal wall placement mode activated.");
                 break;
             case 'v':
                 this.wallPlacementMode = 'vertical';
-                console.log("Vertical wall placement mode activated. Click between squares to place.");
+                console.log("Vertical wall placement mode activated.");
+                break;
+            case 'w':
+                this.wallPlacementMode = 'auto';
+                console.log("Auto wall placement mode activated. Click near edges.");
                 break;
             case 'escape':
+            case 'm':
                 this.wallPlacementMode = null;
                 console.log("Wall placement mode deactivated.");
                 break;
-            case 'm':
-                this.wallPlacementMode = null;
-                console.log("Move mode activated.");
-                break;
         }
     }
 
-    
-   
-handleWallPlacement(clickedSquare) {
-    if (!clickedSquare || !this.wallPlacementMode) return;
-    
-    if (this.game.getCurrentPlayer() !== this.game.human) {
-        console.log("Not human's turn!");
-        return;
-    }
-
-    const { gridX, gridY } = clickedSquare.userData;
-    
-    console.log(`Attempting to place ${this.wallPlacementMode} wall at (${gridX}, ${gridY})`);
-    
-
-    const success = this.placeWall(gridX, gridY, this.wallPlacementMode);
-    
-    console.log(`Wall placement success: ${success}`);
-    
-    if (success) {
-        this.wallPlacementMode = null;
-        console.log("Wall placed! Mode reset to movement.");
-        
-      
-        if (!this.game.isGameOver() && this.game.getCurrentPlayer() === this.game.ai) {
-            setTimeout(() => {
-                this.game.makeAIMove();
-                this.gameController.updatePawnPositions();
-            }, 500);
-        }
-    }
-}
     animate() {
         requestAnimationFrame(() => this.animate());
         this.rendererManager.render(
@@ -242,7 +229,6 @@ handleWallPlacement(clickedSquare) {
         );
     }
 }
-
 
 const app = new GameApp();
 app.init();

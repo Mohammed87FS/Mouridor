@@ -6,10 +6,10 @@ class GameController {
     }
 
     handleSquareClick(clickedSquare) {
-        if (!clickedSquare) return;
+        if (!clickedSquare) return false;
         if (this.game.getCurrentPlayer() !== this.game.human) {
             console.log("Not human's turn!");
-            return;
+            return false;
         }
 
         const { gridX, gridY } = clickedSquare.userData;
@@ -20,14 +20,10 @@ class GameController {
 
         if (moveSuccess) {
             this.updatePawnPositions();
-
-            if (!this.game.isGameOver() && this.game.getCurrentPlayer() === this.game.ai) {
-                setTimeout(() => {
-                    this.game.makeAIMove();
-                    this.updatePawnPositions();
-                }, 500);
-            }
+            return true; 
         }
+        
+        return false;
     }
 
     updatePawnPositions() {
