@@ -12,11 +12,11 @@ const COLORS = {
     AI_PAWN: 0xff0000,
     SQUARE_LIGHT: 0x8B4513,
     SQUARE_DARK: 0xA0522D,
-    HIGHLIGHT: 0x00ff00
+    HIGHLIGHT: 0x0fff0
 };
 
 const CAMERA_CONFIG = {
-    fov: 75,
+    fov: 50,
     position: { x: 0, y: 10, z: 10 },
     lookAt: { x: 0, y: 0, z: 0 }
 };
@@ -39,12 +39,12 @@ function initGame() {
 }
 
 function initThreeJS() {
-   
+
     scene = new THREE.Scene();
-    
- 
+
+
     camera = new THREE.PerspectiveCamera(
-        CAMERA_CONFIG.fov, 
+        CAMERA_CONFIG.fov,
         window.innerWidth / window.innerHeight
     );
     camera.position.set(
@@ -57,15 +57,15 @@ function initThreeJS() {
         CAMERA_CONFIG.lookAt.y,
         CAMERA_CONFIG.lookAt.z
     );
-    
-  
-    renderer = new THREE.WebGLRenderer({ 
+
+
+    renderer = new THREE.WebGLRenderer({
         canvas: document.getElementById('gameCanvas'),
-        antialias: true 
+        antialias: true
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x87CEEB);
-    
+    renderer.setClearColor(0x000000);
+
 
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
@@ -73,7 +73,7 @@ function initThreeJS() {
 
 function createBoard() {
     squares = [];
-    
+
     for (let x = 0; x < BOARD_SIZE; x++) {
         squares[x] = [];
         for (let y = 0; y < BOARD_SIZE; y++) {
@@ -88,11 +88,11 @@ function createSquare(x, y) {
     const geometry = new THREE.BoxGeometry(SQUARE_SIZE, 0.1, SQUARE_SIZE);
     const color = (x + y) % 2 === 0 ? COLORS.SQUARE_LIGHT : COLORS.SQUARE_DARK;
     const material = new THREE.MeshBasicMaterial({ color });
-    
+
     const square = new THREE.Mesh(geometry, material);
     square.position.set(x - 4, 0, y - 4);
     square.userData = { gridX: x, gridY: y };
-    
+
     return square;
 }
 
@@ -103,7 +103,7 @@ function createPawns() {
     humanPawn = new THREE.Mesh(humanGeometry, humanMaterial);
     humanPawn.position.y = PAWN_Y_POSITION;
     scene.add(humanPawn);
-    
+
 
     const aiGeometry = new THREE.CylinderGeometry(PAWN_RADIUS, PAWN_RADIUS, PAWN_HEIGHT, 16);
     const aiMaterial = new THREE.MeshBasicMaterial({ color: COLORS.AI_PAWN });
@@ -113,10 +113,10 @@ function createPawns() {
 }
 
 function updatePawnPositions() {
- 
+
     humanPawn.position.x = game.human.position.x - 4;
     humanPawn.position.z = game.human.position.y - 4;
-    
+
     aiPawn.position.x = game.ai.position.x - 4;
     aiPawn.position.z = game.ai.position.y - 4;
 }
@@ -131,21 +131,21 @@ function onMouseClick(event) {
         console.log("Not human's turn!");
         return;
     }
-    
+
     const clickedSquare = getClickedSquare(event);
     if (!clickedSquare) return;
-    
+
     const { gridX, gridY } = clickedSquare.userData;
-    
+
 
     highlightSquare(clickedSquare);
-    
+
 
     const moveSuccess = game.makeMove(gridX, gridY);
-    
+
     if (moveSuccess) {
         updatePawnPositions();
-        
+
 
         if (!game.isGameOver() && game.getCurrentPlayer() === game.ai) {
             setTimeout(() => {
@@ -160,19 +160,19 @@ function getClickedSquare(event) {
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    
+
     raycaster.setFromCamera(mouse, camera);
-    
+
     const allSquares = squares.flat();
     const intersects = raycaster.intersectObjects(allSquares);
-    
+
     return intersects.length > 0 ? intersects[0].object : null;
 }
 
 function highlightSquare(square) {
     const originalColor = square.material.color.getHex();
     square.material.color.setHex(COLORS.HIGHLIGHT);
-    
+
     setTimeout(() => {
         square.material.color.setHex(originalColor);
     }, 200);
