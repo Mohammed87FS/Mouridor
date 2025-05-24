@@ -18,8 +18,7 @@ class Game {
         this.moveHistory = [];
          this.wallCreationCallback = null;
     }
-  // NEW: Set callback for creating visual walls
-    setWallCreationCallback(callback) {
+     setWallCreationCallback(callback) {
         this.wallCreationCallback = callback;
     }
     start() {
@@ -48,15 +47,23 @@ class Game {
         return true;
     }
 
-    makeAIMove() {
-        if (this.currentPlayer !== this.ai) {
-            console.warn("makeAIMove called when it's not AI's turn");
-            return false;
-        }
-
-         return this.ai.makeMove(this);
+ makeAIMove() {
+    if (this.currentPlayer !== this.ai) {
+        console.warn("makeAIMove called when it's not AI's turn");
+        return false;
     }
 
+    console.log("=== AI TURN START ===");
+    console.log(`AI position: (${this.ai.position.x}, ${this.ai.position.y})`);
+    console.log(`AI walls left: ${this.ai.getWallsLeft()}`);
+    
+    const moveResult = this.ai.makeMove(this);
+    
+    console.log("=== AI TURN END ===");
+    console.log(`Current player after AI move: ${this.currentPlayer.kind}`);
+    
+    return moveResult;
+}
   
    isValidMove(toX, toY) {
     

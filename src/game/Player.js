@@ -7,26 +7,21 @@ class Player {
     getPosition() {
         return { ...this.position };
     }
-
-    setPosition(x, y) {
+     setPosition(x, y) {
         this.position = { x, y };
     }
-
-    hasWallsLeft() {
+     hasWallsLeft() {
         return this.wallsLeft > 0;
     }
-
-    useWall() {
+     useWall() {
         if (this.wallsLeft > 0) {
             this.wallsLeft--;
             return true;
         }
         return false;
     }
-
-    getWallsLeft() {
+     getWallsLeft() {
         return this.wallsLeft;
     }
 }
-
-export default Player;
+ export default Player;

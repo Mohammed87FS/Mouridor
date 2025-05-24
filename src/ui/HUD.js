@@ -27,7 +27,7 @@ class ModernHUD {
     createGlobalStyles() {
         const style = document.createElement('style');
         style.textContent = `
-            /* Global Reset and Variables */
+            
             :root {
                 --primary-blue: #4facfe;
                 --primary-pink: #fa709a;
@@ -57,7 +57,7 @@ class ModernHUD {
                 box-sizing: border-box;
             }
 
-            /* HUD Container */
+            
             #professional-hud {
                 position: fixed;
                 top: 0;
@@ -74,7 +74,7 @@ class ModernHUD {
                 gap: var(--spacing-md);
             }
 
-            /* Glass Morphism Component */
+            
             .glass {
                 background: var(--glass-bg);
                 backdrop-filter: blur(20px) saturate(180%);
@@ -91,7 +91,7 @@ class ModernHUD {
                 transform: translateY(-1px);
             }
 
-            /* Top Bar - Game Stats */
+            
             .top-bar {
                 display: grid;
                 grid-template-columns: 1fr auto 1fr;
@@ -181,7 +181,7 @@ class ModernHUD {
                 opacity: 0.3;
             }
 
-            /* Center Info */
+            
             .center-info {
                 text-align: center;
                 padding: var(--spacing-sm);
@@ -201,7 +201,7 @@ class ModernHUD {
                 letter-spacing: 1px;
             }
 
-            /* Game Area - Mini Map */
+            
             .game-area {
                 display: flex;
                 justify-content: flex-end;
@@ -251,7 +251,7 @@ class ModernHUD {
                 opacity: 0.8;
             }
 
-            /* Bottom Controls */
+            
             .bottom-controls {
                 display: flex;
                 justify-content: center;
@@ -326,7 +326,7 @@ class ModernHUD {
             }
 
            
-            /* Game Overlay for Modals */
+            
             .game-overlay {
                 position: fixed;
                 top: 0;
@@ -397,7 +397,7 @@ class ModernHUD {
                 border: 1px solid var(--glass-border);
             }
 
-            /* Mobile Responsive */
+            
             @media (max-width: 768px) {
                 #professional-hud {
                     padding: var(--spacing-sm);
@@ -486,7 +486,7 @@ class ModernHUD {
                 }
             }
 
-            /* Animations */
+            
             @keyframes pulse {
                 0%, 100% { transform: scale(1.1); opacity: 1; }
                 50% { transform: scale(1.2); opacity: 0.8; }

@@ -10,9 +10,7 @@ import WallFactory from './graphics/WallFactory.js';
 import ModernHUD from './ui/HUD.js';
 import MaterialFactory from './graphics/MaterialFactory.js';
 import ParticleSystem from './graphics/ParticleSystem.js';
-
-
-const CONFIG = {
+ const CONFIG = {
     board: {
         size: 9,
         squareSize: 0.95
@@ -45,8 +43,7 @@ const CONFIG = {
         antialias: true
     }
 };
-
-class GameApp {
+ class GameApp {
     constructor() {
         this.game = new Game();
         this.sceneManager = new EnhancedScene();
@@ -57,9 +54,7 @@ class GameApp {
         this.modernHUD = new ModernHUD();
         this.wallPlacementMode = null;
         this.turnCount = 1;
-        
-       
-        this.boardFactory = new BoardFactory({
+         this.boardFactory = new BoardFactory({
             boardSize: CONFIG.board.size,
             squareSize: CONFIG.board.squareSize,
             colors: {
@@ -67,55 +62,40 @@ class GameApp {
                 dark: CONFIG.colors.squareDark
             }
         });
-        
-        this.pawnFactory = new PawnFactory({
+         this.pawnFactory = new PawnFactory({
             ...CONFIG.pawn,
             colors: {
                 human: CONFIG.colors.human,
                 ai: CONFIG.colors.ai
             }
         });
-
-        this.inputHandler = new InputHandler(
+         this.inputHandler = new InputHandler(
             this.rendererManager,
             this.cameraManager.getCamera()
         );
-
-        this.gameController = new GameController(
+         this.gameController = new GameController(
             this.game,
             this.sceneManager,
             { highlight: CONFIG.colors.highlight }
         );
-        
-       
-        this.setupHUDEvents();
+         this.setupHUDEvents();
     }
-
-    init() {
+     init() {
         this.game.start();
         this.game.setWallCreationCallback((x, y, orientation) => {
             this.createVisualWall(x, y, orientation);
         });
-        
-        this.createBoard();
+         this.createBoard();
         this.createPawns();
         this.setupEventHandlers();
         this.gameController.updatePawnPositions();
-        
-        
-        this.updateHUD();
-        
-        this.animate();
-        
-      
-      
-    }
-
-    setupHUDEvents() {
+         this.updateHUD();
+         this.animate();
+     }
+     setupHUDEvents() {
         document.addEventListener('gameModeChange', (e) => {
             const mode = e.detail.mode;
-            
-            switch(mode) {
+             switch(mode) {
                 case 'move':
                     this.wallPlacementMode = null;
                     break;
@@ -129,32 +109,26 @@ class GameApp {
                     this.wallPlacementMode = 'auto';
                     break;
             }
-       
-        });
+         });
     }
-
-    createBoard() {
+     createBoard() {
         const squares = this.boardFactory.createBoard();
         this.sceneManager.setSquares(squares);
         this.inputHandler.setSquares(squares);
-
-        squares.forEach(row => {
+         squares.forEach(row => {
             row.forEach(square => {
                 this.sceneManager.addToScene(square);
             });
         });
     }
-
-    createPawns() {
+     createPawns() {
         const humanPawn = this.sceneManager.createEnhancedPawn(CONFIG.colors.human, true);
         const aiPawn = this.sceneManager.createEnhancedPawn(CONFIG.colors.ai, false);
-
-        this.sceneManager.setPawns(humanPawn, aiPawn);
+         this.sceneManager.setPawns(humanPawn, aiPawn);
         this.sceneManager.addToScene(humanPawn);
         this.sceneManager.addToScene(aiPawn);
     }
-
-    setupEventHandlers() {
+     setupEventHandlers() {
         this.inputHandler.setClickCallback((clickedSquare, event) => {
             if (this.wallPlacementMode) {
                 this.handleWallPlacementWithEdges(event);
@@ -162,124 +136,98 @@ class GameApp {
                 this.handleSquareClick(clickedSquare);
             }
         });
-
-        this.inputHandler.setResizeCallback((width, height) => {
+         this.inputHandler.setResizeCallback((width, height) => {
             this.cameraManager.updateAspect(width, height);
             this.rendererManager.resize(width, height);
         });
-
-        this.inputHandler.setKeyCallback((event) => {
+         this.inputHandler.setKeyCallback((event) => {
             this.handleKeyPress(event);
         });
     }
-
-    handleKeyPress(event) {
+     handleKeyPress(event) {
         switch(event.key.toLowerCase()) {
             case 'h':
                 this.wallPlacementMode = 'horizontal';
-               
-               
-                document.querySelector('#horizontal-btn')?.click();
+                 document.querySelector('#horizontal-btn')?.click();
                 break;
             case 'v':
                 this.wallPlacementMode = 'vertical';
-               
-              
-                document.querySelector('#vertical-btn')?.click();
+                 document.querySelector('#vertical-btn')?.click();
                 break;
             case 'w':
                 this.wallPlacementMode = 'auto';
-            
-              
-                document.querySelector('#auto-btn')?.click();
+                 document.querySelector('#auto-btn')?.click();
                 break;
             case 'escape':
             case 'm':
                 this.wallPlacementMode = null;
-              
-                
-                document.querySelector('#move-btn')?.click();
+                 document.querySelector('#move-btn')?.click();
                 break;
         }
     }
-
-    createVisualWall(x, y, orientation) {
+     createVisualWall(x, y, orientation) {
         let wall;
         if (orientation === 'horizontal') {
             wall = this.wallFactory.createHorizontalWall(x, y);
         } else {
             wall = this.wallFactory.createVerticalWall(x, y);
         }
-        
-       
-        wall.material = this.materialFactory.createHolographicWallMaterial(CONFIG.wall.color);
-        
-        this.sceneManager.addToScene(wall);
-        
-    
-        this.sceneManager.createWallEffect(wall.position, orientation);
-        
-        console.log(`Created visual ${orientation} wall at (${x}, ${y})`);
+         wall.material = this.materialFactory.createHolographicWallMaterial(CONFIG.wall.color);
+         this.sceneManager.addToScene(wall);
+         this.sceneManager.createWallEffect(wall.position, orientation);
+         console.log(`Created visual ${orientation} wall at (${x}, ${y})`);
     }
-
-    placeWall(x, y, orientation) {
+     placeWall(x, y, orientation) {
         return this.game.placeWall(x, y, orientation);
     }
-
-    handleSquareClick(clickedSquare) {
+     handleSquareClick(clickedSquare) {
         const moveSuccess = this.gameController.handleSquareClick(clickedSquare);
-        
-        if (moveSuccess) {
+         if (moveSuccess) {
             this.turnCount++;
             this.updateHUD();
-            
-          
-            const pawns = this.sceneManager.getPawns();
+             const pawns = this.sceneManager.getPawns();
             const humanPawn = pawns.human;
             this.sceneManager.createMoveEffect(
                 humanPawn.position,
                 { x: clickedSquare.userData.gridX - 4, y: 0.35, z: clickedSquare.userData.gridY - 4 },
                 CONFIG.colors.human
             );
-            
-            if (!this.game.isGameOver() && this.game.getCurrentPlayer() === this.game.ai) {
+             if (!this.game.isGameOver() && this.game.getCurrentPlayer() === this.game.ai) {
                 setTimeout(() => {
                     this.handleAITurn();
                 }, 1000);
             }
         }
     }
-
-    handleAITurn() {
-        const aiMoveSuccess = this.game.makeAIMove();
-        if (aiMoveSuccess) {
-            this.turnCount++;
-            this.gameController.updatePawnPositions();
-            this.updateHUD();
-            
-         
-            const pawns = this.sceneManager.getPawns();
-            const aiPawn = pawns.ai;
-            this.sceneManager.createMoveEffect(
-                aiPawn.position,
-                aiPawn.position,
-                CONFIG.colors.ai
-            );
-            
-         
-        }
+ handleAITurn() {
+    console.log("=== HANDLING AI TURN ===");
+    console.log(`Current player before AI move: ${this.game.getCurrentPlayer().kind}`);
+     const aiMoveSuccess = this.game.makeAIMove();
+    console.log(`AI move success: ${aiMoveSuccess}`);
+    console.log(`Current player after AI move: ${this.game.getCurrentPlayer().kind}`);
+     if (aiMoveSuccess) {
+        this.turnCount++;
+        this.gameController.updatePawnPositions();
+        this.updateHUD();
+         const pawns = this.sceneManager.getPawns();
+        const aiPawn = pawns.ai;
+        this.sceneManager.createMoveEffect(
+            aiPawn.position,
+            aiPawn.position,
+            CONFIG.colors.ai
+        );
+    } else {
+        console.error("AI move failed!");
     }
-
-    updateHUD() {
+}
+     updateHUD() {
         this.modernHUD.updatePlayerStats(
             this.game.human.getWallsLeft(),
             this.game.ai.getWallsLeft(),
             this.game.getCurrentPlayer().kind,
             this.turnCount
         );
-        
-     
-        this.modernHUD.updateMiniMap(
+         this.modernHUD.updateMiniMap(
             this.game.human.position,
             this.game.ai.position,
             {
@@ -288,44 +236,30 @@ class GameApp {
             }
         );
     }
-
-    handleWallPlacementWithEdges(event) {
+     handleWallPlacementWithEdges(event) {
         if (!this.wallPlacementMode) return;
-        
-        if (this.game.getCurrentPlayer() !== this.game.human) {
-            
-            return;
+         if (this.game.getCurrentPlayer() !== this.game.human) {
+             return;
         }
-
-        const squares = this.sceneManager.getSquares();
+         const squares = this.sceneManager.getSquares();
         const edgeInfo = this.inputHandler.getClickedEdge(event, squares);
-        
-        if (!edgeInfo) return;
-
-        const { gridX, gridY, orientation } = edgeInfo;
+         if (!edgeInfo) return;
+         const { gridX, gridY, orientation } = edgeInfo;
         const finalOrientation = this.wallPlacementMode === 'auto' ? orientation : this.wallPlacementMode;
-        
-        const success = this.placeWall(gridX, gridY, finalOrientation);
-        
-        if (success) {
+         const success = this.placeWall(gridX, gridY, finalOrientation);
+         if (success) {
             this.wallPlacementMode = null;
             this.turnCount++;
             this.updateHUD();
-            
-            
-            document.querySelector('#move-btn')?.click();
-            
-            
-            
-            if (!this.game.isGameOver() && this.game.getCurrentPlayer() === this.game.ai) {
+             document.querySelector('#move-btn')?.click();
+             if (!this.game.isGameOver() && this.game.getCurrentPlayer() === this.game.ai) {
                 setTimeout(() => {
                     this.handleAITurn();
                 }, 1000);
             }
         } 
     }
-
-    animate() {
+     animate() {
         requestAnimationFrame(() => this.animate());
         this.rendererManager.render(
             this.sceneManager.getScene(),
@@ -333,6 +267,5 @@ class GameApp {
         );
     }
 }
-
-const app = new GameApp();
+ const app = new GameApp();
 app.init();
