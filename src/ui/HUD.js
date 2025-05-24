@@ -618,13 +618,17 @@ class ModernHUD {
                     <div class="control-label">Move</div>
                 </button>
                 <button class="control-button" id="horizontal-btn" data-mode="horizontal">
-                    <div class="control-icon">➖</div>
-                    <div class="control-label">H-Wall</div>
-                </button>
-                <button class="control-button" id="vertical-btn" data-mode="vertical">
-                    <div class="control-icon">➕</div>
-                    <div class="control-label">V-Wall</div>
-                </button>
+    <div class="control-icon">
+        <img src="https://img.icons8.com/ios/24/ffffff/horizontal-line.png" alt="H-Wall" style="width: 24px; height: 24px;">
+    </div>
+    <div class="control-label">H-Wall</div>
+</button>
+<button class="control-button" id="vertical-btn" data-mode="vertical">
+    <div class="control-icon">
+        <img src="https://img.icons8.com/ios/24/ffffff/vertical-line.png" alt="V-Wall" style="width: 24px; height: 24px;">
+    </div>
+    <div class="control-label">V-Wall</div>
+</button>
                 <button class="control-button" id="auto-btn" data-mode="auto">
                     <div class="control-icon">🎯</div>
                     <div class="control-label">Smart</div>
