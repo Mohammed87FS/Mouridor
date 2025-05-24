@@ -3,7 +3,7 @@ class ModernHUD {
         this.hudContainer = null;
         this.isInitialized = false;
         this.isMobile = this.detectMobile();
-       
+
         this.init();
     }
 
@@ -188,15 +188,12 @@ class ModernHUD {
             }
 
             .turn-counter {
-                font-size: 24px;
-                font-weight: 700;
-                background: linear-gradient(135deg, var(--primary-blue), var(--primary-pink));
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
-                margin-bottom: var(--spacing-xs);
-            }
-
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); 
+        }
             .game-mode {
                 font-size: 12px;
                 color: var(--text-secondary);
@@ -579,7 +576,7 @@ class ModernHUD {
             
             <div class="center-info">
                 <div class="turn-counter" id="turn-counter">Turn 1</div>
-                <div class="game-mode" id="current-mode">Movement Mode</div>
+                
             </div>
             
             <div class="player-info ai">
@@ -593,7 +590,7 @@ class ModernHUD {
                 </div>
             </div>
         `;
-        
+
         this.hudContainer.appendChild(topBar);
         this.initializeWallDots();
     }
@@ -606,7 +603,7 @@ class ModernHUD {
                 <div class="mini-map-grid" id="mini-map-grid"></div>
             </div>
         `;
-        
+
         this.hudContainer.appendChild(gameArea);
         this.initializeMiniMap();
     }
@@ -634,7 +631,7 @@ class ModernHUD {
                 </button>
             </div>
         `;
-        
+
         this.hudContainer.appendChild(bottomControls);
         this.setupControlEvents();
     }
@@ -657,20 +654,20 @@ class ModernHUD {
                 </div>
             </div>
         `;
-        
+
         document.body.appendChild(overlay);
     }
 
     initializeWallDots() {
         const humanDots = document.getElementById('human-wall-dots');
         const aiDots = document.getElementById('ai-wall-dots');
-        
+
         for (let i = 0; i < 10; i++) {
             const humanDot = document.createElement('div');
             humanDot.className = 'wall-dot';
             humanDot.dataset.index = i;
             humanDots.appendChild(humanDot);
-            
+
             const aiDot = document.createElement('div');
             aiDot.className = 'wall-dot';
             aiDot.dataset.index = i;
@@ -690,20 +687,20 @@ class ModernHUD {
 
     setupControlEvents() {
         const buttons = document.querySelectorAll('.control-button');
-        
+
         buttons.forEach(btn => {
             btn.addEventListener('click', (e) => {
-               
+
                 buttons.forEach(b => b.classList.remove('active'));
-                
-           
+
+
                 btn.classList.add('active');
-             
+
                 const mode = btn.dataset.mode;
-                document.dispatchEvent(new CustomEvent('gameModeChange', { 
-                    detail: { mode } 
+                document.dispatchEvent(new CustomEvent('gameModeChange', {
+                    detail: { mode }
                 }));
-                
+
                 this.updateGameMode(mode);
             });
         });
@@ -720,7 +717,7 @@ class ModernHUD {
         elements.forEach((element, index) => {
             element.style.opacity = '0';
             element.style.transform = 'translateY(20px)';
-            
+
             setTimeout(() => {
                 element.classList.add('fade-in-up');
                 element.style.opacity = '1';
@@ -729,16 +726,16 @@ class ModernHUD {
         });
     }
 
-  
+
     updatePlayerStats(humanWalls, aiWalls, currentPlayer, turnCount) {
-        
+
         document.getElementById('turn-counter').textContent = `Turn ${turnCount}`;
-        
-     
+
+
         this.updateWallDots('human', humanWalls);
         this.updateWallDots('ai', aiWalls);
-        
-        
+
+
         document.getElementById('human-avatar').classList.toggle('active', currentPlayer === 'Human');
         document.getElementById('ai-avatar').classList.toggle('active', currentPlayer === 'AI');
     }
@@ -757,32 +754,32 @@ class ModernHUD {
             vertical: 'Vertical Wall',
             auto: 'Smart Wall'
         };
-        
+
         document.getElementById('current-mode').textContent = modeNames[mode] || mode;
     }
 
     updateMiniMap(humanPos, aiPos, walls) {
         const cells = document.querySelectorAll('.map-cell');
-        
-      
+
+
         cells.forEach(cell => {
             cell.classList.remove('human', 'ai', 'wall');
         });
-        
-     
+
+
         const humanIndex = humanPos.y * 9 + humanPos.x;
         const aiIndex = aiPos.y * 9 + aiPos.x;
-        
+
         if (cells[humanIndex]) cells[humanIndex].classList.add('human');
         if (cells[aiIndex]) cells[aiIndex].classList.add('ai');
-        
-      
+
+
         walls.horizontal.forEach(wallKey => {
             const [x, y] = wallKey.split(',').map(Number);
             const index = y * 9 + x;
             if (cells[index]) cells[index].classList.add('wall');
         });
-        
+
         walls.vertical.forEach(wallKey => {
             const [x, y] = wallKey.split(',').map(Number);
             const index = y * 9 + x;
@@ -790,21 +787,21 @@ class ModernHUD {
         });
     }
 
-    
+
 
     showGameOver(winner, onRestart, onMenu) {
         const overlay = document.getElementById('game-overlay');
         const title = document.getElementById('modal-title');
         const content = document.getElementById('modal-content');
-        
+
         title.textContent = winner === 'Human' ? '🎉 Victory!' : '🤖 AI Wins!';
-        content.textContent = winner === 'Human' 
+        content.textContent = winner === 'Human'
             ? 'Congratulations! You have successfully reached the opposite side and won the game!'
             : 'The AI has outmaneuvered you this time. Better luck next round!';
-        
+
         document.getElementById('restart-btn').onclick = onRestart;
         document.getElementById('menu-btn').onclick = onMenu;
-        
+
         overlay.style.display = 'flex';
     }
 
