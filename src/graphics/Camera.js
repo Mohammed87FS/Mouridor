@@ -3,7 +3,7 @@
 class CameraManager {
     constructor(config = {}) {
         const {
-            fov = 75,
+            fov = 50,
             aspect = window.innerWidth / window.innerHeight,
             position = { x: 0, y: 10, z: 10 },
             lookAt = { x: 0, y: 0, z: 0 }
