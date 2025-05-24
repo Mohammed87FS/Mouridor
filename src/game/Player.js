@@ -1,11 +1,9 @@
-
 class Player {
     constructor(kind, position) {
         this.kind = kind;
-        this.position = { ...position }; 
+        this.position = { ...position };
         this.wallsLeft = 10;
     }
-
     getPosition() {
         return { ...this.position };
     }
@@ -24,6 +22,10 @@ class Player {
             return true;
         }
         return false;
+    }
+
+    getWallsLeft() {
+        return this.wallsLeft;
     }
 }
 

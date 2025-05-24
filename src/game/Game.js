@@ -29,14 +29,11 @@ class Game {
             return false;
         }
 
-
         this.currentPlayer.position = { x: toX, y: toY };
         console.log(`${this.currentPlayer.kind} moved to (${toX}, ${toY})`);
 
-
         this.recordMove(toX, toY);
 
- 
         if (this.checkWin()) {
             this.state = GameState.WON;
             console.log(`${this.currentPlayer.kind} won!`);
@@ -55,7 +52,6 @@ class Game {
 
         const { x: currentX, y: currentY } = this.ai.position;
         
-        
         const moves = [
             { x: currentX, y: currentY + 1 }, 
             { x: currentX - 1, y: currentY },
@@ -73,19 +69,31 @@ class Game {
         return false;
     }
 
+    // FIXED: Single isValidMove method with wall checking
     isValidMove(toX, toY) {
-    
+        // Check bounds
         if (!this.board.isInsideBoard(toX, toY)) {
             return false;
         }
 
- 
+        // Check if position is occupied
         if (this.isPositionOccupied(toX, toY)) {
             return false;
         }
 
-  
-        return this.isAdjacentMove(toX, toY);
+        // Check if move is adjacent
+        if (!this.isAdjacentMove(toX, toY)) {
+            return false;
+        }
+
+        // Check if movement is blocked by walls
+        const { x: fromX, y: fromY } = this.currentPlayer.position;
+        if (this.board.isMovementBlocked(fromX, fromY, toX, toY)) {
+            console.log("Move blocked by wall!");
+            return false;
+        }
+
+        return true;
     }
 
     isPositionOccupied(x, y) {
@@ -101,7 +109,6 @@ class Game {
     }
 
     checkWin() {
-    
         if (this.human.position.y === 0) {
             return true;
         }
@@ -115,6 +122,36 @@ class Game {
 
     switchTurns() {
         this.currentPlayer = this.currentPlayer === this.human ? this.ai : this.human;
+    }
+
+    placeWall(x, y, orientation) {
+        console.log(`Attempting to place ${orientation} wall at (${x},${y})`);
+        console.log(`Current player: ${this.currentPlayer.kind}, walls left: ${this.currentPlayer.getWallsLeft()}`);
+        
+        // Check if player has walls left
+        if (!this.currentPlayer.hasWallsLeft()) {
+            console.log("No walls left!");
+            return false;
+        }
+
+        // Check if wall placement is valid
+        if (!this.board.isValidWallPlacement(x, y, orientation)) {
+            console.log("Invalid wall placement!");
+            return false;
+        }
+
+        // Place the wall
+        this.board.addWall(x, y, orientation);
+        this.currentPlayer.useWall();
+        
+        console.log(`${this.currentPlayer.kind} placed ${orientation} wall at (${x}, ${y}). Walls left: ${this.currentPlayer.getWallsLeft()}`);
+        
+        // Debug: show all walls
+        this.board.debugWalls();
+        
+        // Switch turns after placing wall
+        this.switchTurns();
+        return true;
     }
 
     isGameOver() {

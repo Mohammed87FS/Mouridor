@@ -6,6 +6,7 @@ import BoardFactory from './graphics/BoardFactory.js';
 import PawnFactory from './graphics/PawnFactory.js';
 import InputHandler from './game/InputHandler.js';
 import GameController from './game/GameController.js';
+import WallFactory from './graphics/WallFactory.js';
 
 const CONFIG = {
     board: {
@@ -16,6 +17,12 @@ const CONFIG = {
         height: 0.5,
         radius: 0.3,
         yPosition: 0.35
+    },
+     wall: {
+        color: 0xBFBF00, 
+        thickness: 0.2, 
+        height: 0.8,    
+        length: 1.0
     },
     colors: {
         human: 0x0000ff,
@@ -41,6 +48,8 @@ class GameApp {
         this.sceneManager = new SceneManager();
         this.cameraManager = new CameraManager(CONFIG.camera);
         this.rendererManager = new RendererManager('gameCanvas', CONFIG.renderer);
+        this.wallFactory = new WallFactory(CONFIG.wall);
+        this.wallPlacementMode = null;
         this.boardFactory = new BoardFactory({
             boardSize: CONFIG.board.size,
             squareSize: CONFIG.board.squareSize,
@@ -77,11 +86,27 @@ class GameApp {
         this.gameController.updatePawnPositions();
         this.animate();
     }
+    placeWall(x, y, orientation) {
+        const success = this.game.placeWall(x, y, orientation);
 
+        if (success) {
+          
+            let wall;
+            if (orientation === 'horizontal') {
+                wall = this.wallFactory.createHorizontalWall(x, y);
+            } else {
+                wall = this.wallFactory.createVerticalWall(x, y);
+            }
+
+            this.sceneManager.addToScene(wall);
+        }
+
+        return success;
+    }
     createBoard() {
         const squares = this.boardFactory.createBoard();
         this.sceneManager.setSquares(squares);
-        this.inputHandler.setSquares(squares); 
+        this.inputHandler.setSquares(squares);
 
         squares.forEach(row => {
             row.forEach(square => {
@@ -99,18 +124,116 @@ class GameApp {
         this.sceneManager.addToScene(aiPawn);
     }
 
-    setupEventHandlers() {
+     setupEventHandlers() {
         this.inputHandler.setClickCallback((clickedSquare, event) => {
-         
-            this.gameController.handleSquareClick(clickedSquare);
+            if (this.wallPlacementMode) {
+                // Handle wall placement with edge detection
+                this.handleWallPlacementWithEdges(event);
+            } else {
+                // Handle pawn movement
+                this.gameController.handleSquareClick(clickedSquare);
+            }
         });
 
         this.inputHandler.setResizeCallback((width, height) => {
             this.cameraManager.updateAspect(width, height);
             this.rendererManager.resize(width, height);
         });
+
+    
+        this.inputHandler.setKeyCallback((event) => {
+            this.handleKeyPress(event);
+        });
+    }
+     handleWallPlacementWithEdges(event) {
+        if (!this.wallPlacementMode) return;
+        
+        if (this.game.getCurrentPlayer() !== this.game.human) {
+            console.log("Not human's turn!");
+            return;
+        }
+
+        const squares = this.sceneManager.getSquares();
+        const edgeInfo = this.inputHandler.getClickedEdge(event, squares);
+        
+        if (!edgeInfo) return;
+
+        const { gridX, gridY, orientation } = edgeInfo;
+        
+        console.log(`Attempting to place ${orientation} wall at edge (${gridX}, ${gridY})`);
+        
+        // Force the orientation based on wall placement mode if desired
+        const finalOrientation = this.wallPlacementMode === 'auto' ? orientation : this.wallPlacementMode;
+        
+        const success = this.placeWall(gridX, gridY, finalOrientation);
+        
+        if (success) {
+            this.wallPlacementMode = null;
+            console.log("Wall placed! Mode reset to movement.");
+            
+            // Handle AI turn
+            if (!this.game.isGameOver() && this.game.getCurrentPlayer() === this.game.ai) {
+                setTimeout(() => {
+                    this.game.makeAIMove();
+                    this.gameController.updatePawnPositions();
+                }, 500);
+            }
+        }
     }
 
+    handleKeyPress(event) {
+        switch(event.key.toLowerCase()) {
+            case 'h':
+                this.wallPlacementMode = 'horizontal';
+                console.log("Horizontal wall placement mode activated. Click between squares to place.");
+                break;
+            case 'v':
+                this.wallPlacementMode = 'vertical';
+                console.log("Vertical wall placement mode activated. Click between squares to place.");
+                break;
+            case 'escape':
+                this.wallPlacementMode = null;
+                console.log("Wall placement mode deactivated.");
+                break;
+            case 'm':
+                this.wallPlacementMode = null;
+                console.log("Move mode activated.");
+                break;
+        }
+    }
+
+    
+   
+handleWallPlacement(clickedSquare) {
+    if (!clickedSquare || !this.wallPlacementMode) return;
+    
+    if (this.game.getCurrentPlayer() !== this.game.human) {
+        console.log("Not human's turn!");
+        return;
+    }
+
+    const { gridX, gridY } = clickedSquare.userData;
+    
+    console.log(`Attempting to place ${this.wallPlacementMode} wall at (${gridX}, ${gridY})`);
+    
+
+    const success = this.placeWall(gridX, gridY, this.wallPlacementMode);
+    
+    console.log(`Wall placement success: ${success}`);
+    
+    if (success) {
+        this.wallPlacementMode = null;
+        console.log("Wall placed! Mode reset to movement.");
+        
+      
+        if (!this.game.isGameOver() && this.game.getCurrentPlayer() === this.game.ai) {
+            setTimeout(() => {
+                this.game.makeAIMove();
+                this.gameController.updatePawnPositions();
+            }, 500);
+        }
+    }
+}
     animate() {
         requestAnimationFrame(() => this.animate());
         this.rendererManager.render(
