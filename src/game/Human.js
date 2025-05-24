@@ -5,7 +5,5 @@ class HumanPlayer extends Player {
 
         super(kind, startPosition)
     }
-
-
 }
 export default HumanPlayer;
