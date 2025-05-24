@@ -1,7 +1,6 @@
-import Board from './Board.js'
-import HumanPlayer from './Human.js'
-import AI from './AI.js'
-
+import Board from './Board.js';
+import HumanPlayer from './Human.js';
+import AI from './AI.js';
 
 const GameState = {
     PLAYING: 'playing',
@@ -11,27 +10,18 @@ const GameState = {
 
 class Game {
     constructor() {
-        this.board = new Board(9)
-        this.human = new HumanPlayer("Human", { x: 4, y: 8 }) 
-        this.ai = new AI("AI", { x: 4, y: 0 })               
+        this.board = new Board(9);
+        this.human = new HumanPlayer("Human", { x: 4, y: 8 });
+        this.ai = new AI("AI", { x: 4, y: 0 });
         this.currentPlayer = this.human;
         this.state = GameState.PLAYING;
-        this.moveHistory = []
+        this.moveHistory = [];
     }
 
     start() {
-        console.log("Game started !")
+        console.log("Game started!");
+        this.state = GameState.PLAYING;
     }
-
-    switchTurns() {
-        if (this.currentPlayer === this.human) {
-
-            this.currentPlayer = this.ai
-        } else {
-
-            this.currentPlayer = this.human
-        }
-    };
 
     makeMove(toX, toY) {
         if (!this.isValidMove(toX, toY)) {
@@ -39,117 +29,113 @@ class Game {
             return false;
         }
 
-        this.currentPlayer.position = { x: toX, y: toY }
-        console.log(`${this.currentPlayer.kind} move to ${toX}, ${toY}`);
 
-        const historyData = {
-            player: this.currentPlayer.kind,
-            position: { x: toX, y: toY }
-        };
+        this.currentPlayer.position = { x: toX, y: toY };
+        console.log(`${this.currentPlayer.kind} moved to (${toX}, ${toY})`);
 
-        this.moveHistory.push(historyData)
 
+        this.recordMove(toX, toY);
+
+ 
         if (this.checkWin()) {
-            console.log(`${this.currentPlayer.kind} won !`)
+            this.state = GameState.WON;
+            console.log(`${this.currentPlayer.kind} won!`);
             return true;
         }
 
         this.switchTurns();
-
-
         return true;
-    }
-    isGameOver() {
-        return this.state === GameState.WON || this.state === GameState.DRAW;
-    }
-    checkWin() {
-       
-        if (this.human.position.y === 0) {
-            this.state = GameState.WON;
-            return true;
-        }
-
-  
-        if (this.ai.position.y === 8) {
-            this.state = GameState.WON;
-            return true;
-        }
-
-        return false;
     }
 
     makeAIMove() {
-        const currentY = this.ai.position.y;
-        const currentX = this.ai.position.x;
-
-        if (this.isValidMove(currentX, currentY + 1)) {
-            this.ai.position = { x: currentX, y: currentY + 1 };
-            console.log(`${this.ai.kind} move to ${currentX}, ${currentY + 1}`);
-            this.switchTurns();
-            return true;
+        if (this.currentPlayer !== this.ai) {
+            console.warn("makeAIMove called when it's not AI's turn");
+            return false;
         }
 
-        else if (this.isValidMove(currentX - 1, currentY)) {
-            this.ai.position = { x: currentX - 1, y: currentY };
-            console.log(`${this.ai.kind} move to ${currentX - 1}, ${currentY}`);
-            this.switchTurns();
-            return true;
-        }
+        const { x: currentX, y: currentY } = this.ai.position;
+        
+        
+        const moves = [
+            { x: currentX, y: currentY + 1 }, 
+            { x: currentX - 1, y: currentY },
+            { x: currentX + 1, y: currentY }, 
+            { x: currentX, y: currentY - 1 }  
+        ];
 
-        else if (this.isValidMove(currentX + 1, currentY)) {
-            this.ai.position = { x: currentX + 1, y: currentY };
-            console.log(`${this.ai.kind} move to ${currentX + 1}, ${currentY}`);
-            this.switchTurns();
-            return true;
-        }
-
-        else if (this.isValidMove(currentX, currentY - 1)) {
-            this.ai.position = { x: currentX, y: currentY - 1 };
-            console.log(`${this.ai.kind} move to ${currentX}, ${currentY - 1}`);
-            this.switchTurns();
-            return true;
+        for (const move of moves) {
+            if (this.isValidMove(move.x, move.y)) {
+                return this.makeMove(move.x, move.y);
+            }
         }
 
         console.log("AI can't move anywhere!");
         return false;
     }
 
-
     isValidMove(toX, toY) {
-        console.log(`Checking move from (${this.currentPlayer.position.x}, ${this.currentPlayer.position.y}) to (${toX}, ${toY})`);
-
+    
         if (!this.board.isInsideBoard(toX, toY)) {
-            console.log("Move invalid: outside board");
             return false;
         }
 
-        const otherPlayer = this.currentPlayer === this.human ? this.ai : this.human;
-        console.log(`Other player is at (${otherPlayer.position.x}, ${otherPlayer.position.y})`);
-
-        if (otherPlayer.position.x === toX && otherPlayer.position.y === toY) {
-            console.log("Move invalid: space occupied by other player");
+ 
+        if (this.isPositionOccupied(toX, toY)) {
             return false;
         }
 
-        const fromX = this.currentPlayer.position.x;
-        const fromY = this.currentPlayer.position.y;
-
-        const dx = Math.abs(toX - fromX);
-        const dy = Math.abs(toY - fromY);
-        console.log(`Distance: dx=${dx}, dy=${dy}`);
-
-        if (!((dx === 1 && dy === 0) || (dx === 0 && dy === 1))) {
-            console.log("Move invalid: not adjacent");
-            return false;
-        }
-
-        console.log("Move is valid!");
-        return true;
+  
+        return this.isAdjacentMove(toX, toY);
     }
 
+    isPositionOccupied(x, y) {
+        const otherPlayer = this.currentPlayer === this.human ? this.ai : this.human;
+        return otherPlayer.position.x === x && otherPlayer.position.y === y;
+    }
 
+    isAdjacentMove(toX, toY) {
+        const { x: fromX, y: fromY } = this.currentPlayer.position;
+        const dx = Math.abs(toX - fromX);
+        const dy = Math.abs(toY - fromY);
+        return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+    }
 
+    checkWin() {
+    
+        if (this.human.position.y === 0) {
+            return true;
+        }
+        
+        if (this.ai.position.y === 8) {
+            return true;
+        }
+        
+        return false;
+    }
 
+    switchTurns() {
+        this.currentPlayer = this.currentPlayer === this.human ? this.ai : this.human;
+    }
+
+    isGameOver() {
+        return this.state === GameState.WON || this.state === GameState.DRAW;
+    }
+
+    recordMove(x, y) {
+        this.moveHistory.push({
+            player: this.currentPlayer.kind,
+            position: { x, y },
+            timestamp: Date.now()
+        });
+    }
+
+    getCurrentPlayer() {
+        return this.currentPlayer;
+    }
+
+    getGameState() {
+        return this.state;
+    }
 }
 
 export default Game;

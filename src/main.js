@@ -1,146 +1,192 @@
 import Game from './game/Game.js';
 
+
+const BOARD_SIZE = 9;
+const SQUARE_SIZE = 0.95;
+const PAWN_HEIGHT = 0.5;
+const PAWN_RADIUS = 0.3;
+const PAWN_Y_POSITION = 0.35;
+
+const COLORS = {
+    HUMAN_PAWN: 0x0000ff,
+    AI_PAWN: 0xff0000,
+    SQUARE_LIGHT: 0x8B4513,
+    SQUARE_DARK: 0xA0522D,
+    HIGHLIGHT: 0x00ff00
+};
+
+const CAMERA_CONFIG = {
+    fov: 75,
+    position: { x: 0, y: 10, z: 10 },
+    lookAt: { x: 0, y: 0, z: 0 }
+};
+
+
 const game = new Game();
-game.start();
+let scene, camera, renderer, raycaster, mouse;
+let squares = [];
+let humanPawn, aiPawn;
 
-const scene = new THREE.Scene();
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
-camera.position.z = 5;
+function initGame() {
+    game.start();
+    initThreeJS();
+    createBoard();
+    createPawns();
+    setupEventListeners();
+    updatePawnPositions();
+    animate();
+}
 
-const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas') });
-renderer.setSize(window.innerWidth, window.innerHeight);
+function initThreeJS() {
+   
+    scene = new THREE.Scene();
+    
+ 
+    camera = new THREE.PerspectiveCamera(
+        CAMERA_CONFIG.fov, 
+        window.innerWidth / window.innerHeight
+    );
+    camera.position.set(
+        CAMERA_CONFIG.position.x,
+        CAMERA_CONFIG.position.y,
+        CAMERA_CONFIG.position.z
+    );
+    camera.lookAt(
+        CAMERA_CONFIG.lookAt.x,
+        CAMERA_CONFIG.lookAt.y,
+        CAMERA_CONFIG.lookAt.z
+    );
+    
+  
+    renderer = new THREE.WebGLRenderer({ 
+        canvas: document.getElementById('gameCanvas'),
+        antialias: true 
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x87CEEB);
+    
 
-camera.position.set(0, 10, 10);
-camera.lookAt(0, 0, 0);
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+}
 
-const squares = [];
-const squareSize = 0.95;
-
-for (let x = 0; x < 9; x++) {
-    squares[x] = [];
-    for (let y = 0; y < 9; y++) {
-        const squareGeometry = new THREE.BoxGeometry(squareSize, 0.1, squareSize);
-        const squareMaterial = new THREE.MeshBasicMaterial({
-            color: (x + y) % 2 === 0 ? 0x8B4513 : 0xA0522D
-        });
-        const square = new THREE.Mesh(squareGeometry, squareMaterial);
-
-        square.position.set(x - 4, 0, y - 4);
-        square.userData = { gridX: x, gridY: y };
-
-        scene.add(square);
-        squares[x][y] = square;
+function createBoard() {
+    squares = [];
+    
+    for (let x = 0; x < BOARD_SIZE; x++) {
+        squares[x] = [];
+        for (let y = 0; y < BOARD_SIZE; y++) {
+            const square = createSquare(x, y);
+            squares[x][y] = square;
+            scene.add(square);
+        }
     }
 }
 
-const humanGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16);
-const humanMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-const humanPawn = new THREE.Mesh(humanGeometry, humanMaterial);
-humanPawn.position.set(0, 0.35, 4); 
-scene.add(humanPawn);
+function createSquare(x, y) {
+    const geometry = new THREE.BoxGeometry(SQUARE_SIZE, 0.1, SQUARE_SIZE);
+    const color = (x + y) % 2 === 0 ? COLORS.SQUARE_LIGHT : COLORS.SQUARE_DARK;
+    const material = new THREE.MeshBasicMaterial({ color });
+    
+    const square = new THREE.Mesh(geometry, material);
+    square.position.set(x - 4, 0, y - 4);
+    square.userData = { gridX: x, gridY: y };
+    
+    return square;
+}
 
-const aiGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 16);
-const aiMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-const aiPawn = new THREE.Mesh(aiGeometry, aiMaterial);
-aiPawn.position.set(0, 0.35, -4); 
-scene.add(aiPawn);
+function createPawns() {
 
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
+    const humanGeometry = new THREE.CylinderGeometry(PAWN_RADIUS, PAWN_RADIUS, PAWN_HEIGHT, 16);
+    const humanMaterial = new THREE.MeshBasicMaterial({ color: COLORS.HUMAN_PAWN });
+    humanPawn = new THREE.Mesh(humanGeometry, humanMaterial);
+    humanPawn.position.y = PAWN_Y_POSITION;
+    scene.add(humanPawn);
+    
+
+    const aiGeometry = new THREE.CylinderGeometry(PAWN_RADIUS, PAWN_RADIUS, PAWN_HEIGHT, 16);
+    const aiMaterial = new THREE.MeshBasicMaterial({ color: COLORS.AI_PAWN });
+    aiPawn = new THREE.Mesh(aiGeometry, aiMaterial);
+    aiPawn.position.y = PAWN_Y_POSITION;
+    scene.add(aiPawn);
+}
 
 function updatePawnPositions() {
-
+ 
     humanPawn.position.x = game.human.position.x - 4;
-    humanPawn.position.z = (game.human.position.y - 4);  
-
+    humanPawn.position.z = game.human.position.y - 4;
+    
     aiPawn.position.x = game.ai.position.x - 4;
-    aiPawn.position.z = (game.ai.position.y - 4);  
+    aiPawn.position.z = game.ai.position.y - 4;
+}
+
+function setupEventListeners() {
+    renderer.domElement.addEventListener('click', onMouseClick);
+    window.addEventListener('resize', onWindowResize);
 }
 
 function onMouseClick(event) {
-    console.log("Mouse clicked!");
-
-
-    if (game.currentPlayer !== game.human) {
+    if (game.getCurrentPlayer() !== game.human) {
         console.log("Not human's turn!");
         return;
     }
+    
+    const clickedSquare = getClickedSquare(event);
+    if (!clickedSquare) return;
+    
+    const { gridX, gridY } = clickedSquare.userData;
+    
 
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    highlightSquare(clickedSquare);
+    
 
-    raycaster.setFromCamera(mouse, camera);
+    const moveSuccess = game.makeMove(gridX, gridY);
+    
+    if (moveSuccess) {
+        updatePawnPositions();
+        
 
-    const allSquares = [];
-    for (let x = 0; x < 9; x++) {
-        for (let y = 0; y < 9; y++) {
-            allSquares.push(squares[x][y]);
-        }
-    }
-
-    const intersects = raycaster.intersectObjects(allSquares);
-
-    if (intersects.length > 0) {
-        const clickedSquare = intersects[0].object;
-        const gridX = clickedSquare.userData.gridX;
-        const gridY = clickedSquare.userData.gridY;
-
-        console.log(`Clicked on square: (${gridX}, ${gridY})`);
-        console.log(`Human is at: (${game.human.position.x}, ${game.human.position.y})`);
-
-        const dx = Math.abs(gridX - game.human.position.x);
-        const dy = Math.abs(gridY - game.human.position.y);
-        const isAdjacent = (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
-        console.log(`Distance: dx=${dx}, dy=${dy}, Adjacent: ${isAdjacent}`);
-
-        const originalColor = clickedSquare.material.color.getHex();
-        clickedSquare.material.color.setHex(0x00ff00);
-        setTimeout(() => {
-            clickedSquare.material.color.setHex(originalColor);
-        }, 200);
-
-        const moveSuccess = game.makeMove(gridX, gridY);
-        console.log("Move success:", moveSuccess);
-
-        if (moveSuccess) {
-            updatePawnPositions();
+        if (!game.isGameOver() && game.getCurrentPlayer() === game.ai) {
             setTimeout(() => {
-                if (!game.isGameOver() && game.currentPlayer === game.ai) {
-                    game.makeAIMove();
-                    updatePawnPositions();
-                }
+                game.makeAIMove();
+                updatePawnPositions();
             }, 500);
         }
     }
 }
 
-renderer.domElement.addEventListener('click', onMouseClick);
+function getClickedSquare(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    
+    const allSquares = squares.flat();
+    const intersects = raycaster.intersectObjects(allSquares);
+    
+    return intersects.length > 0 ? intersects[0].object : null;
+}
 
-window.addEventListener('resize', () => {
+function highlightSquare(square) {
+    const originalColor = square.material.color.getHex();
+    square.material.color.setHex(COLORS.HIGHLIGHT);
+    
+    setTimeout(() => {
+        square.material.color.setHex(originalColor);
+    }, 200);
+}
+
+function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-
-setTimeout(() => {
-    console.log("Making a test move...");
-    const moveSuccess = game.makeMove(4, 1);
-    updatePawnPositions();
-    
-    if (moveSuccess && !game.isGameOver() && game.currentPlayer === game.ai) {
-        setTimeout(() => {
-            game.makeAIMove();
-            updatePawnPositions();
-        }, 500);
-    }
-}, 2000);
+}
 
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
 
-animate();
+initGame();

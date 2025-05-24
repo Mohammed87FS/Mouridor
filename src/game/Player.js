@@ -1,16 +1,30 @@
-class Player {
 
+class Player {
     constructor(kind, position) {
         this.kind = kind;
-        this.position = position;
+        this.position = { ...position }; 
         this.wallsLeft = 10;
     }
 
-    getPosition(x,y) { };
+    getPosition() {
+        return { ...this.position };
+    }
 
-    makeMove(board){};
+    setPosition(x, y) {
+        this.position = { x, y };
+    }
 
+    hasWallsLeft() {
+        return this.wallsLeft > 0;
+    }
 
-
+    useWall() {
+        if (this.wallsLeft > 0) {
+            this.wallsLeft--;
+            return true;
+        }
+        return false;
+    }
 }
-export default Player;  
+
+export default Player;
